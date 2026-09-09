@@ -10,6 +10,7 @@ from common import config
 from common.hopsworks_utils import get_feature_store, get_or_create_feature_view
 
 TEST_DAYS = 30
+VAL_DAYS = 21
 
 FEATURE_COLUMNS = [
     "temperature",
@@ -43,19 +44,23 @@ def time_split(df: pd.DataFrame):
 
 
 def train(train_df: pd.DataFrame) -> xgb.XGBRegressor:
+    val_cutoff = train_df["datetime"].max() - timedelta(days=VAL_DAYS)
+    fit_df = train_df[train_df["datetime"] < val_cutoff]
+    val_df = train_df[train_df["datetime"] >= val_cutoff]
+
     model = xgb.XGBRegressor(
-        n_estimators=500,
+        n_estimators=1000,
         max_depth=6,
         learning_rate=0.05,
         subsample=0.8,
         colsample_bytree=0.8,
         objective="reg:squarederror",
-        early_stopping_rounds=20,
+        early_stopping_rounds=30,
     )
     model.fit(
-        train_df[FEATURE_COLUMNS],
-        train_df[TARGET_COLUMN],
-        eval_set=[(train_df[FEATURE_COLUMNS], train_df[TARGET_COLUMN])],
+        fit_df[FEATURE_COLUMNS],
+        fit_df[TARGET_COLUMN],
+        eval_set=[(val_df[FEATURE_COLUMNS], val_df[TARGET_COLUMN])],
         verbose=False,
     )
     return model
