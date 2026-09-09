@@ -9,10 +9,17 @@ import plotly.graph_objects as go
 
 try:
     import spaces
-    gpu = spaces.GPU
+
+    @spaces.GPU(duration=5)
+    def _touch_gpu():
+        # No-op: only exists so a ZeroGPU-hardware Space passes its startup
+        # check ("No @spaces.GPU function detected"). The dashboard itself
+        # never needs a GPU, so it stays undecorated and doesn't spend quota.
+        return None
+
+    _touch_gpu()
 except ImportError:
-    def gpu(fn):
-        return fn
+    pass
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -34,7 +41,6 @@ def load_data():
     return price_df, pred_df
 
 
-@gpu
 def build_dashboard():
     price_df, pred_df = load_data()
     now = pd.Timestamp.utcnow()
