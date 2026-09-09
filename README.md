@@ -2,7 +2,7 @@
 
 ID2223 project (group_888): predicts next-24h hourly day-ahead electricity
 prices for the Stockholm region (SE3) using weather + calendar features,
-served through a Streamlit dashboard.
+served through a Gradio dashboard.
 
 ## Architecture
 
@@ -20,7 +20,7 @@ Feature-Training-Inference pipeline on Hopsworks:
   rows for the next 24 hours from the latest forecast weather + most recent
   known price lags, predicts, writes to the `price_predictions` Feature
   Group.
-- **Dashboard** (`app/app.py`): Streamlit app, deployed as a Hugging Face
+- **Dashboard** (`app/app.py`): Gradio app, deployed as a Hugging Face
   Space, reads directly from the Feature Store.
 
 ## One-time setup
@@ -62,9 +62,10 @@ file for the cron expression, and use "Run workflow" to trigger manually.
 
 ## Deploying the dashboard
 
-Push `app/` (plus `common/` and `inference_pipeline/`, which it imports) to
-a new Hugging Face Space (Streamlit SDK). Add `HOPSWORKS_API_KEY` and
-`HOPSWORKS_PROJECT` as Space secrets.
+Create a Hugging Face Space (Gradio SDK), add it as a second git remote,
+and push this repo to it. Edit the Space's generated README.md frontmatter
+so `app_file: app/app.py` (it defaults to `app.py` at the repo root).
+Add `HOPSWORKS_API_KEY` and `HOPSWORKS_PROJECT` as Space secrets.
 
 ## Known rough edges to verify before relying on this
 
