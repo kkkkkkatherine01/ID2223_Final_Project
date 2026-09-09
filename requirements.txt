@@ -9,3 +9,4 @@ holidays>=0.47
 entsoe-py>=0.6.0
 gradio>=4.40.0
 plotly>=5.20.0
+spaces>=0.30.0

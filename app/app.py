@@ -7,6 +7,13 @@ import gradio as gr
 import pandas as pd
 import plotly.graph_objects as go
 
+try:
+    import spaces
+    gpu = spaces.GPU
+except ImportError:
+    def gpu(fn):
+        return fn
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from common.hopsworks_utils import get_feature_store, get_or_create_price_fg  # noqa: E402
@@ -27,6 +34,7 @@ def load_data():
     return price_df, pred_df
 
 
+@gpu
 def build_dashboard():
     price_df, pred_df = load_data()
     now = pd.Timestamp.utcnow()
