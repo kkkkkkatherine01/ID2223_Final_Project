@@ -1,0 +1,10 @@
+.env
+HOPSWORKS_API_KEY.txt
+Weather_API_Key.txt
+ENTSO-E_token_Key.txt
+__pycache__/
+*.pyc
+.venv/
+venv/
+model_artifact/
+.streamlit/
