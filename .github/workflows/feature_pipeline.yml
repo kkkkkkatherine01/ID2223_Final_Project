@@ -2,7 +2,7 @@ name: Feature Pipeline
 
 on:
   schedule:
-    - cron: "22 12 * * *"  # TEMP: testing that the schedule actually fires, revert to "7 12 * * *" after
+    - cron: "7 12 * * *"
   workflow_dispatch: {}
 
 jobs:
