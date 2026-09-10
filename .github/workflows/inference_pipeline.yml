@@ -2,7 +2,7 @@ name: Inference Pipeline
 
 on:
   schedule:
-    - cron: "30 12 * * *"
+    - cron: "37 12 * * *"
   workflow_dispatch: {}
 
 jobs:
