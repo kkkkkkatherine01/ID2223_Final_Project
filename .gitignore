@@ -9,3 +9,6 @@ __pycache__/
 venv/
 model_artifact/
 .streamlit/
+requirement for project.txt
+.files/
+files/

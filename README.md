@@ -2,7 +2,7 @@
 
 ID2223 project (group_888): predicts next-24h hourly day-ahead electricity
 prices for the Stockholm region (SE3) using weather + calendar features,
-served through a Gradio dashboard.
+served through a Streamlit dashboard.
 
 ## Architecture
 
@@ -20,8 +20,8 @@ Feature-Training-Inference pipeline on Hopsworks:
   rows for the next 24 hours from the latest forecast weather + most recent
   known price lags, predicts, writes to the `price_predictions` Feature
   Group.
-- **Dashboard** (`app/app.py`): Gradio app, deployed as a Hugging Face
-  Space, reads directly from the Feature Store.
+- **Dashboard** (`app/app.py`): Streamlit app, deployed on Streamlit
+  Community Cloud, reads directly from the Feature Store.
 
 ## One-time setup
 
@@ -62,10 +62,16 @@ file for the cron expression, and use "Run workflow" to trigger manually.
 
 ## Deploying the dashboard
 
-Create a Hugging Face Space (Gradio SDK), add it as a second git remote,
-and push this repo to it. Edit the Space's generated README.md frontmatter
-so `app_file: app/app.py` (it defaults to `app.py` at the repo root).
-Add `HOPSWORKS_API_KEY` and `HOPSWORKS_PROJECT` as Space secrets.
+Deployed on Streamlit Community Cloud (share.streamlit.io) - sign in with
+GitHub, connect this repo, set the main file path to `app/app.py`, and add
+`HOPSWORKS_API_KEY` / `HOPSWORKS_PROJECT` under the app's Secrets (TOML
+format). Every push to `main` redeploys automatically.
+
+(An earlier version was deployed to a Hugging Face Space with the Gradio
+SDK; abandoned because free-tier Spaces only offer ZeroGPU hardware, which
+enforces a hard per-call duration limit even for apps that never use a
+GPU - Hopsworks' feature-store queries occasionally take 2+ minutes, well
+past that limit, causing hard failures that a plain-CPU host doesn't have.)
 
 ## Known rough edges to verify before relying on this
 

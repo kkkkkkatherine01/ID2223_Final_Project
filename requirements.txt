@@ -7,6 +7,5 @@ requests>=2.31.0
 python-dotenv>=1.0.0
 holidays>=0.47
 entsoe-py>=0.6.0
-gradio>=4.40.0
+streamlit>=1.35.0
 plotly>=5.20.0
-spaces>=0.30.0
