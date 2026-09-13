@@ -39,6 +39,18 @@ def get_or_create_weather_fg(fs):
     )
 
 
+def get_or_create_predictions_fg(fs):
+    return fs.get_or_create_feature_group(
+        name=config.PREDICTIONS_FG_NAME,
+        version=config.FG_VERSION,
+        description="Model predictions for future hourly electricity prices",
+        primary_key=["datetime"],
+        event_time="datetime",
+        online_enabled=True,
+        time_travel_format="HUDI",
+    )
+
+
 def get_or_create_feature_view(fs):
     price_fg = get_or_create_price_fg(fs)
     weather_fg = get_or_create_weather_fg(fs)

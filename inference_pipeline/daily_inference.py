@@ -4,22 +4,13 @@ import pandas as pd
 import xgboost as xgb
 
 from common import config
-from common.hopsworks_utils import get_feature_store, get_or_create_price_fg, get_or_create_weather_fg
+from common.hopsworks_utils import (
+    get_feature_store,
+    get_or_create_predictions_fg,
+    get_or_create_price_fg,
+    get_or_create_weather_fg,
+)
 from training_pipeline.train_model import FEATURE_COLUMNS
-
-PREDICTIONS_FG_NAME = "price_predictions"
-
-
-def get_or_create_predictions_fg(fs):
-    return fs.get_or_create_feature_group(
-        name=PREDICTIONS_FG_NAME,
-        version=config.FG_VERSION,
-        description="Model predictions for future hourly electricity prices",
-        primary_key=["datetime"],
-        event_time="datetime",
-        online_enabled=True,
-        time_travel_format="HUDI",
-    )
 
 
 def load_latest_model(project):
@@ -80,7 +71,7 @@ def main():
 
     fg = get_or_create_predictions_fg(fs)
     fg.insert(result)
-    print(f"Inserted {len(result)} predictions (model v{model_version}) into '{PREDICTIONS_FG_NAME}'")
+    print(f"Inserted {len(result)} predictions (model v{model_version}) into '{config.PREDICTIONS_FG_NAME}'")
 
 
 if __name__ == "__main__":

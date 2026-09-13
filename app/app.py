@@ -8,8 +8,11 @@ import plotly.graph_objects as go
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from common.hopsworks_utils import get_feature_store, get_or_create_price_fg  # noqa: E402
-from inference_pipeline.daily_inference import get_or_create_predictions_fg  # noqa: E402
+from common.hopsworks_utils import (  # noqa: E402
+    get_feature_store,
+    get_or_create_predictions_fg,
+    get_or_create_price_fg,
+)
 
 st.set_page_config(page_title="SE3 Electricity Price Forecast", layout="wide")
 

@@ -16,6 +16,7 @@ HOPSWORKS_PROJECT = os.getenv("HOPSWORKS_PROJECT")
 FG_VERSION = 1
 PRICE_FG_NAME = "electricity_prices"
 WEATHER_FG_NAME = "weather"
+PREDICTIONS_FG_NAME = "price_predictions"
 
 FEATURE_VIEW_NAME = "electricity_price_fv"
 FEATURE_VIEW_VERSION = 2
