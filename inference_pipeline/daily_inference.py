@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
+import numpy as np
 import pandas as pd
 import xgboost as xgb
 
@@ -39,13 +40,6 @@ def _rolling_features(buffer: pd.Series) -> dict:
 
 
 def build_inference_inputs(fs, target_start: datetime, target_end: datetime):
-    """Fetch the target window's weather/calendar rows plus raw price history.
-
-    The price history is used two ways: exact point lookups for the lag_Nh
-    features (always safe - see _price_lag_features), and as the starting
-    buffer for the rolling_Wh features, which predict_next_24h extends
-    hour-by-hour with each step's own prediction.
-    """
     weather_fg = get_or_create_weather_fg(fs)
     weather_df = weather_fg.read()
     weather_df = weather_df[
@@ -65,13 +59,6 @@ def build_inference_inputs(fs, target_start: datetime, target_end: datetime):
 def predict_next_24h(
     model: xgb.XGBRegressor, weather_df: pd.DataFrame, price_series: pd.Series, initial_buffer: pd.Series
 ) -> pd.DataFrame:
-    """Recursive multi-step forecast: rolling_Wh features can reach into hours
-    that haven't happened yet (the 24h rolling window vs. the 24h forecast
-    horizon), so each hour's own prediction is fed back into the buffer as a
-    stand-in "observed" price for computing the next hour's rolling features -
-    the standard recursive strategy for multi-step forecasting (same pattern
-    used for pm25_lag_* in the course's air-quality inference notebook).
-    """
     buffer = initial_buffer.copy()
     preds = []
     for _, row in weather_df.iterrows():
@@ -90,7 +77,7 @@ def predict_next_24h(
         buffer.loc[t] = pred
 
     result = weather_df[["datetime"]].copy()
-    result["predicted_price_eur_mwh"] = preds
+    result["predicted_price_eur_mwh"] = np.asarray(preds, dtype="float32")
     return result.dropna(subset=["predicted_price_eur_mwh"]).reset_index(drop=True)
 
 
