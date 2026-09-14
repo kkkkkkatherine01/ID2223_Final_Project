@@ -4,6 +4,13 @@ ID2223 project (group_888): predicts next-24h hourly day-ahead electricity
 prices for the Stockholm region (SE3) using weather + calendar features,
 served through a Streamlit dashboard.
 
+## Live dashboard
+
+- **Primary**: https://id2223finalproject-tdkxcqvvre8kraotgy3ffg.streamlit.app (Streamlit Community Cloud)
+- **Backup**: https://huggingface.co/spaces/kkkkkkatherine/se3-electricity-forecast
+  (Gradio, on Hugging Face Spaces - kept running as a fallback; see "Deploying
+  the dashboard" below for why it's not the primary)
+
 ## Architecture
 
 Feature-Training-Inference pipeline on Hopsworks:
@@ -62,42 +69,12 @@ file for the cron expression, and use "Run workflow" to trigger manually.
 
 ## Deploying the dashboard
 
-Deployed on Streamlit Community Cloud (share.streamlit.io) - sign in with
+**Primary - Streamlit Community Cloud** (share.streamlit.io): sign in with
 GitHub, connect this repo, set the main file path to `app/app.py`, and add
 `HOPSWORKS_API_KEY` / `HOPSWORKS_PROJECT` under the app's Secrets (TOML
-format). Every push to `main` redeploys automatically.
-
-(An earlier version was deployed to a Hugging Face Space with the Gradio
-SDK; abandoned because free-tier Spaces only offer ZeroGPU hardware, which
-enforces a hard per-call duration limit even for apps that never use a
-GPU - Hopsworks' feature-store queries occasionally take 2+ minutes, well
-past that limit, causing hard failures that a plain-CPU host doesn't have.)
-
-## Known rough edges to verify before relying on this
-
-- **Prices come from ENTSO-E, not Nordpool directly**: an earlier version
-  of this pipeline used the `nordpool` PyPI package, which scrapes
-  Nordpool's public data-portal API. That endpoint turned out to only
-  serve the last ~60 days of history to unauthenticated requests (older
-  dates return 401), which isn't enough to train a seasonal model on. The
-  ENTSO-E Transparency Platform publishes the same day-ahead auction
-  results officially and allows pulling years of history with a free
-  registered token - see `feature_pipeline/entsoe_client.py`.
-- **`pyjks`/`twofish` on Windows**: `hopsworks` depends on `pyjks` (for
-  Kafka client-cert auth used when writing to a Feature Group), which in
-  turn lists `twofish` as a dependency - a C extension with no prebuilt
-  Windows wheel. In practice the standard JKS keystore path Hopsworks
-  actually uses never imports `twofish` (it's only needed for the
-  BKS/PKCS12 code paths), so `scripts/install_windows.ps1` installs
-  `hopsworks` and `pyjks` with `--no-deps` and supplies their real
-  dependencies by hand, skipping `twofish`.
-- **Feature Group storage format**: the Hopsworks SDK defaults new Feature
-  Groups to `time_travel_format="DELTA"`, which needs the `deltalake`
-  extra - not published for Windows at all. All FG creation helpers in
-  `common/hopsworks_utils.py` explicitly pass `time_travel_format="HUDI"`
-  instead, which works cross-platform.
-- **OpenWeatherMap free tier**: forecast is 3-hourly, interpolated to
-  hourly here - fine for temperature/wind but coarser for cloud cover.
-- **DST**: all timestamps are kept in UTC throughout to sidestep the
-  23h/25h CET/CEST transition days; the dashboard should probably convert
-  to Europe/Stockholm only at display time.
+format). Every push to `main` redeploys automatically. Uses
+`app/requirements.txt` (not the root one) - deliberately excludes
+`hopsworks[python]`'s `confluent-kafka` dependency, since Streamlit Cloud's
+Debian image ships a `librdkafka` too old to build it against; the
+dashboard only ever reads from the Feature Store, so plain `hopsworks` +
+an explicit `pyarrow` is enough.
