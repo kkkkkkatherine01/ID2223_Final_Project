@@ -13,7 +13,6 @@ from common.hopsworks_utils import (  # noqa: E402
     get_or_create_predictions_fg,
     get_or_create_price_fg,
 )
-from common.delivery_day import next_delivery_day_window  # noqa: E402
 
 st.set_page_config(page_title="SE3 Electricity Price Forecast", layout="wide")
 
@@ -39,51 +38,41 @@ st.title("Swedish Electricity Price Forecast (SE3 - Stockholm)")
 
 price_df, pred_df = load_data()
 now = pd.Timestamp.utcnow()
-tomorrow_start, tomorrow_end = next_delivery_day_window(now)
+
+latest_batch = pred_df["prediction_made_at"].max() if not pred_df.empty else None
+forecast_df = pred_df[pred_df["prediction_made_at"] == latest_batch] if latest_batch is not None else pred_df.iloc[0:0]
+forecast_df = forecast_df.sort_values("datetime")
 
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.subheader("Price history (7d) & tomorrow's forecast")
-    history_window = price_df[
-        (price_df["datetime"] >= now - timedelta(days=7)) & (price_df["datetime"] < tomorrow_start)
-    ]
-
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(
-            x=history_window["datetime"].dt.tz_convert(STOCKHOLM_TZ),
-            y=history_window["price_eur_mwh"],
-            name="Actual price",
-            line=dict(color="#1f77b4"),
+    st.subheader("Forecast")
+    if forecast_df.empty:
+        st.info("No forecast available yet - check back after the next inference run.")
+    else:
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=forecast_df["datetime"].dt.tz_convert(STOCKHOLM_TZ),
+                y=forecast_df["predicted_price_eur_mwh"],
+                name="Forecast",
+                line=dict(color="#ff7f0e"),
+            )
         )
-    )
-    forecast_window = pred_df[
-        (pred_df["datetime"] >= tomorrow_start) & (pred_df["datetime"] <= tomorrow_end)
-    ]
-    fig.add_trace(
-        go.Scatter(
-            x=forecast_window["datetime"].dt.tz_convert(STOCKHOLM_TZ),
-            y=forecast_window["predicted_price_eur_mwh"],
-            name="Forecast",
-            line=dict(color="#ff7f0e", dash="dash"),
+        fig.update_layout(
+            xaxis_title="Time (Stockholm)",
+            yaxis_title="EUR / MWh",
+            height=450,
         )
-    )
-    fig.update_layout(
-        xaxis_title="Time (Stockholm)",
-        yaxis_title="EUR / MWh",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02),
-        height=450,
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
 with col2:
     st.subheader("Best times to use electricity")
-    known_upcoming = history_window[history_window["datetime"] > now][["datetime", "price_eur_mwh"]]
+    known_upcoming = price_df[price_df["datetime"] > now][["datetime", "price_eur_mwh"]]
     known_upcoming = known_upcoming.rename(columns={"price_eur_mwh": "predicted_price_eur_mwh"})
-    upcoming = pd.concat(
-        [known_upcoming, forecast_window[["datetime", "predicted_price_eur_mwh"]]], ignore_index=True
-    )
+    upcoming_forecast = forecast_df[forecast_df["datetime"] > now][["datetime", "predicted_price_eur_mwh"]]
+    upcoming = pd.concat([known_upcoming, upcoming_forecast], ignore_index=True)
+    upcoming = upcoming.drop_duplicates(subset="datetime", keep="first")
     if upcoming.empty:
         st.info("No forecast available yet - check back after the next inference run.")
     else:
@@ -91,7 +80,7 @@ with col2:
         for _, row in cheapest.iterrows():
             local_time = row["datetime"].tz_convert(STOCKHOLM_TZ)
             st.metric(
-                label=f"{local_time.strftime('%a %H:%M')} (Stockholm)",
+                label=f"{local_time.strftime('%a %H:%M %Z')} (Stockholm)",
                 value=f"{row['predicted_price_eur_mwh']:.1f} EUR/MWh",
             )
 
