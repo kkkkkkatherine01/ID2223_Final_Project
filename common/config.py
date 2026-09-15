@@ -17,6 +17,7 @@ FG_VERSION = 1
 PRICE_FG_NAME = "electricity_prices"
 WEATHER_FG_NAME = "weather"
 PREDICTIONS_FG_NAME = "price_predictions"
+PREDICTIONS_FG_VERSION = 2
 
 FEATURE_VIEW_NAME = "electricity_price_fv"
 FEATURE_VIEW_VERSION = 2
@@ -27,3 +28,19 @@ MODEL_VERSION = None
 PRICE_LAG_HOURS = [24, 48, 168]
 ROLLING_WINDOWS_HOURS = [24, 168]
 FORECAST_HORIZON_HOURS = 24
+
+FEATURE_COLUMNS = [
+    "temperature",
+    "wind_speed",
+    "cloud_coverage",
+    "hour",
+    "day_of_week",
+    "is_weekend",
+    "is_holiday",
+    "month",
+] + [f"price_lag_{lag}h" for lag in PRICE_LAG_HOURS] + [
+    f"price_rolling_mean_{w}h" for w in ROLLING_WINDOWS_HOURS
+] + [
+    f"price_rolling_std_{w}h" for w in ROLLING_WINDOWS_HOURS
+]
+TARGET_COLUMN = "price_eur_mwh"

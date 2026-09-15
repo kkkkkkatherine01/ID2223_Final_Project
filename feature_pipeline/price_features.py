@@ -10,7 +10,7 @@ def add_price_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.set_index("datetime")
     full_index = pd.date_range(df.index.min(), df.index.max(), freq="1h", tz="UTC")
     df = df.reindex(full_index)
-    df["price_eur_mwh"] = df["price_eur_mwh"].interpolate(limit=6)
+    df["price_eur_mwh"] = df["price_eur_mwh"].ffill(limit=6)
 
     for lag in config.PRICE_LAG_HOURS:
         df[f"price_lag_{lag}h"] = df["price_eur_mwh"].shift(lag)

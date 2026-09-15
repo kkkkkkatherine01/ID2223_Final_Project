@@ -9,7 +9,22 @@ from common import config
 MAX_RETRIES = 4
 RETRY_BACKOFF_SECONDS = 30
 
-AREA_CODE = "SE_3"
+# ENTSO-E area codes for the Swedish bidding zones, keyed by config.NORDPOOL_AREA
+AREA_CODES = {
+    "SE1": "SE_1",
+    "SE2": "SE_2",
+    "SE3": "SE_3",
+    "SE4": "SE_4",
+}
+
+
+def _area_code() -> str:
+    try:
+        return AREA_CODES[config.NORDPOOL_AREA]
+    except KeyError:
+        raise RuntimeError(
+            f"Unknown NORDPOOL_AREA '{config.NORDPOOL_AREA}' - must be one of {sorted(AREA_CODES)}"
+        )
 
 
 def _client() -> EntsoePandasClient:
@@ -26,12 +41,13 @@ def _to_local(ts) -> pd.Timestamp:
 def fetch_prices_range(start, end) -> pd.DataFrame:
     client = _client()
 
+    area_code = _area_code()
     series = None
     last_exc = None
     for attempt in range(MAX_RETRIES):
         try:
             series = client.query_day_ahead_prices(
-                AREA_CODE, start=_to_local(start), end=_to_local(end)
+                area_code, start=_to_local(start), end=_to_local(end)
             )
             break
         except requests.exceptions.RequestException as exc:

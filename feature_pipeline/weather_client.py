@@ -32,6 +32,8 @@ def fetch_forecast() -> pd.DataFrame:
     df = pd.DataFrame(rows).sort_values("datetime").set_index("datetime")
     df = df.resample("1h").interpolate(method="linear").reset_index()
     df["cloud_coverage"] = df["cloud_coverage"].round().astype("int64")  # matches bigint FG schema
+    df["source"] = "forecast"
+    df["forecast_made_at"] = pd.Timestamp.now(tz="UTC")
     return df
 
 
@@ -43,12 +45,13 @@ def fetch_historical(start: date, end: date) -> pd.DataFrame:
         "end_date": end.isoformat(),
         "hourly": "temperature_2m,wind_speed_10m,cloud_cover",
         "timezone": "UTC",
+        "wind_speed_unit": "ms",  # Open-Meteo defaults to km/h; forecast (OWM, units=metric) is m/s
     }
     resp = requests.get(OPEN_METEO_ARCHIVE_URL, params=params, timeout=60)
     resp.raise_for_status()
     hourly = resp.json()["hourly"]
 
-    return pd.DataFrame(
+    df = pd.DataFrame(
         {
             "datetime": pd.to_datetime(hourly["time"], utc=True),
             "temperature": hourly["temperature_2m"],
@@ -56,3 +59,6 @@ def fetch_historical(start: date, end: date) -> pd.DataFrame:
             "cloud_coverage": hourly["cloud_cover"],
         }
     )
+    df["source"] = "historical_archive"
+    df["forecast_made_at"] = df["datetime"]
+    return df

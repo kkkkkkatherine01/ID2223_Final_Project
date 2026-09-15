@@ -26,7 +26,9 @@ def get_fs():
 def load_data():
     _, fs = get_fs()
     price_df = get_or_create_price_fg(fs).read().sort_values("datetime")
-    pred_df = get_or_create_predictions_fg(fs).read().sort_values("datetime")
+    pred_df = get_or_create_predictions_fg(fs).read()
+    pred_df = pred_df.sort_values("prediction_made_at").drop_duplicates(subset="datetime", keep="last")
+    pred_df = pred_df.sort_values("datetime")
     return price_df, pred_df
 
 
@@ -50,10 +52,13 @@ with col1:
             line=dict(color="#1f77b4"),
         )
     )
+    forecast_window = pred_df[
+        (pred_df["datetime"] >= now) & (pred_df["datetime"] < now + timedelta(hours=24))
+    ]
     fig.add_trace(
         go.Scatter(
-            x=pred_df["datetime"],
-            y=pred_df["predicted_price_eur_mwh"],
+            x=forecast_window["datetime"],
+            y=forecast_window["predicted_price_eur_mwh"],
             name="Forecast",
             line=dict(color="#ff7f0e", dash="dash"),
         )
@@ -74,8 +79,9 @@ with col2:
     else:
         cheapest = upcoming.nsmallest(3, "predicted_price_eur_mwh")
         for _, row in cheapest.iterrows():
+            local_time = row["datetime"].tz_convert("Europe/Stockholm")
             st.metric(
-                label=row["datetime"].strftime("%a %H:%M"),
+                label=f"{local_time.strftime('%a %H:%M')} (Stockholm)",
                 value=f"{row['predicted_price_eur_mwh']:.1f} EUR/MWh",
             )
 

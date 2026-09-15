@@ -7,26 +7,12 @@ import xgboost as xgb
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from common import config
-from common.hopsworks_utils import get_feature_store, get_or_create_feature_view
+from common.config import FEATURE_COLUMNS, TARGET_COLUMN
+from common.hopsworks_utils import get_champion_model, get_feature_store, get_or_create_feature_view
+from training_pipeline.backtest import recursive_backtest_mae
 
 TEST_DAYS = 30
 VAL_DAYS = 21
-
-FEATURE_COLUMNS = [
-    "temperature",
-    "wind_speed",
-    "cloud_coverage",
-    "hour",
-    "day_of_week",
-    "is_weekend",
-    "is_holiday",
-    "month",
-] + [f"price_lag_{lag}h" for lag in config.PRICE_LAG_HOURS] + [
-    f"price_rolling_mean_{w}h" for w in config.ROLLING_WINDOWS_HOURS
-] + [
-    f"price_rolling_std_{w}h" for w in config.ROLLING_WINDOWS_HOURS
-]
-TARGET_COLUMN = "price_eur_mwh"
 
 
 def load_training_data(fs) -> pd.DataFrame:
@@ -83,8 +69,39 @@ def main():
 
     train_df, test_df = time_split(df)
     model = train(train_df)
-    metrics = evaluate(model, test_df)
+
+    oracle_metrics = evaluate(model, test_df)
+
+    candidate_backtest = recursive_backtest_mae(model, df, test_days=TEST_DAYS)
+    metrics = {
+        "mae": candidate_backtest["mae"],
+        "oracle_mae": oracle_metrics["mae"],
+        "rmse": oracle_metrics["rmse"],
+        "n_test_rows": oracle_metrics["n_test_rows"],
+        "n_backtest_windows": candidate_backtest["n_windows"],
+    }
     print("Evaluation:", metrics)
+
+    mr = project.get_model_registry()
+
+    champion_mae = None
+    champion = get_champion_model(project)
+    if champion is None:
+        print("No existing champion to compare against; registering unconditionally.")
+    else:
+        champion_dir = champion.download()
+        champion_model = xgb.XGBRegressor()
+        champion_model.load_model(f"{champion_dir}/model.json")
+        champion_backtest = recursive_backtest_mae(champion_model, df, test_days=TEST_DAYS)
+        champion_mae = champion_backtest["mae"]
+        print(f"Current champion (v{champion.version}) re-evaluated on this window: mae={champion_mae:.3f}")
+
+    if champion_mae is not None and metrics["mae"] >= champion_mae:
+        print(
+            f"Candidate mae={metrics['mae']:.3f} is not better than champion's "
+            f"mae={champion_mae:.3f} on the same window - skipping registration."
+        )
+        return
 
     out_dir = "model_artifact"
     os.makedirs(out_dir, exist_ok=True)
@@ -93,7 +110,6 @@ def main():
     with open(os.path.join(out_dir, "metrics.json"), "w") as f:
         json.dump(metrics, f, indent=2)
 
-    mr = project.get_model_registry()
     hw_model = mr.python.create_model(
         name=config.MODEL_NAME,
         metrics=metrics,

@@ -42,13 +42,32 @@ def get_or_create_weather_fg(fs):
 def get_or_create_predictions_fg(fs):
     return fs.get_or_create_feature_group(
         name=config.PREDICTIONS_FG_NAME,
-        version=config.FG_VERSION,
-        description="Model predictions for future hourly electricity prices",
-        primary_key=["datetime"],
+        version=config.PREDICTIONS_FG_VERSION,
+        description="Model predictions for future hourly electricity prices, one row per "
+        "(target hour, time the forecast was made) so every forecast horizon is retained",
+        primary_key=["datetime", "prediction_made_at"],
         event_time="datetime",
         online_enabled=True,
         time_travel_format="HUDI",
     )
+
+
+def get_champion_model(project):
+    """The current champion is simply the highest registered version.
+
+    training_pipeline/train_model.py only ever registers a new version when it
+    beats the reigning champion on a freshly re-run, identical backtest, so
+    version number alone is a safe way to pick "current best" - unlike
+    comparing raw stored 'mae' values across versions (mr.get_best_model),
+    which silently breaks the moment the evaluation methodology changes (as it
+    did going from a single-shot oracle eval to a recursive backtest: older
+    versions' mae is on a different, incomparable scale).
+    """
+    mr = project.get_model_registry()
+    models = mr.get_models(config.MODEL_NAME)
+    if not models:
+        return None
+    return max(models, key=lambda m: m.version)
 
 
 def get_or_create_feature_view(fs):
