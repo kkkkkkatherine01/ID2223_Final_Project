@@ -45,8 +45,11 @@ col1, col2 = st.columns([3, 1])
 
 with col1:
     st.subheader("Price history (7d) & tomorrow's forecast")
+    # extends past "now" through published-but-not-yet-elapsed hours (today's
+    # remaining day-ahead prices, already public) - stops at tomorrow_start,
+    # where Forecast takes over, so the two lines connect with no gap
     history_window = price_df[
-        (price_df["datetime"] >= now - timedelta(days=7)) & (price_df["datetime"] <= now)
+        (price_df["datetime"] >= now - timedelta(days=7)) & (price_df["datetime"] < tomorrow_start)
     ]
 
     fig = go.Figure()
@@ -79,7 +82,11 @@ with col1:
 
 with col2:
     st.subheader("Best times to use electricity")
-    upcoming = forecast_window
+    known_upcoming = history_window[history_window["datetime"] > now][["datetime", "price_eur_mwh"]]
+    known_upcoming = known_upcoming.rename(columns={"price_eur_mwh": "predicted_price_eur_mwh"})
+    upcoming = pd.concat(
+        [known_upcoming, forecast_window[["datetime", "predicted_price_eur_mwh"]]], ignore_index=True
+    )
     if upcoming.empty:
         st.info("No forecast available yet - check back after the next inference run.")
     else:

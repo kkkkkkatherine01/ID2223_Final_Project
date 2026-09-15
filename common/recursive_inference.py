@@ -6,9 +6,6 @@ from common import config
 
 
 def _price_lag_features(price_series: pd.Series, t: pd.Timestamp) -> dict:
-    # lag_Nh(t) for t in tomorrow's delivery day always falls on today or
-    # earlier (min lag 24h == 1 day), which is already published - no
-    # recursion needed here, unlike _rolling_features.
     return {f"price_lag_{lag}h": price_series.get(t - pd.Timedelta(hours=lag)) for lag in config.PRICE_LAG_HOURS}
 
 
