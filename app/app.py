@@ -43,7 +43,9 @@ col1, col2 = st.columns([3, 1])
 
 with col1:
     st.subheader("Price history (7d) & 24h forecast")
-    history_window = price_df[price_df["datetime"] >= now - timedelta(days=7)]
+    history_window = price_df[
+        (price_df["datetime"] >= now - timedelta(days=7)) & (price_df["datetime"] <= now)
+    ]
 
     fig = go.Figure()
     fig.add_trace(

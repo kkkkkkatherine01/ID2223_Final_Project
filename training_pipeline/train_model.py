@@ -1,4 +1,5 @@
 import json
+import math
 import os
 from datetime import timedelta
 
@@ -80,6 +81,12 @@ def main():
     oracle_metrics = evaluate(model, test_df)
 
     candidate_backtest = recursive_backtest_mae(model, df, price_series_raw, test_days=TEST_DAYS)
+    if candidate_backtest["n_windows"] == 0 or not math.isfinite(candidate_backtest["mae"]):
+        raise RuntimeError(
+            f"Candidate backtest produced no valid evaluation windows "
+            f"(n_windows={candidate_backtest['n_windows']}, mae={candidate_backtest['mae']}) "
+            "- refusing to register an unevaluated model"
+        )
     metrics = {
         "mae": candidate_backtest["mae"],
         "oracle_mae": oracle_metrics["mae"],
@@ -100,8 +107,14 @@ def main():
         champion_model = xgb.XGBRegressor()
         champion_model.load_model(f"{champion_dir}/model.json")
         champion_backtest = recursive_backtest_mae(champion_model, df, price_series_raw, test_days=TEST_DAYS)
-        champion_mae = champion_backtest["mae"]
-        print(f"Current champion (v{champion.version}) re-evaluated on this window: mae={champion_mae:.3f}")
+        if champion_backtest["n_windows"] == 0 or not math.isfinite(champion_backtest["mae"]):
+            print(
+                f"Champion (v{champion.version})'s backtest produced no valid evaluation windows on this "
+                "window - treating the candidate as automatically better."
+            )
+        else:
+            champion_mae = champion_backtest["mae"]
+            print(f"Current champion (v{champion.version}) re-evaluated on this window: mae={champion_mae:.3f}")
 
     if champion_mae is not None and metrics["mae"] >= champion_mae:
         print(
