@@ -45,9 +45,6 @@ col1, col2 = st.columns([3, 1])
 
 with col1:
     st.subheader("Price history (7d) & tomorrow's forecast")
-    # extends past "now" through published-but-not-yet-elapsed hours (today's
-    # remaining day-ahead prices, already public) - stops at tomorrow_start,
-    # where Forecast takes over, so the two lines connect with no gap
     history_window = price_df[
         (price_df["datetime"] >= now - timedelta(days=7)) & (price_df["datetime"] < tomorrow_start)
     ]

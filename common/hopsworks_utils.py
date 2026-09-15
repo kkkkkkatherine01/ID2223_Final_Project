@@ -64,8 +64,6 @@ def get_or_create_feature_view(fs):
     price_fg = get_or_create_price_fg(fs)
     weather_fg = get_or_create_weather_fg(fs)
 
-    # exclude weather's datetime to avoid the "weather_"-prefixed column names
-    # Hopsworks generates when both sides of a join share a column name
     query = price_fg.select_all().join(weather_fg.select_except(["area", "datetime"]), on=["datetime"])
 
     return fs.get_or_create_feature_view(

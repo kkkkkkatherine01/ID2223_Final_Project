@@ -29,7 +29,7 @@ ROLLING_WINDOWS_HOURS = [24, 168]
 
 STOCKHOLM_TZ = "Europe/Stockholm"
 # backtest simulates daily_inference.py running at this UTC hour each day
-INFERENCE_RUN_HOUR_UTC = 8
+INFERENCE_RUN_HOUR_UTC = 6
 
 FEATURE_COLUMNS = [
     "temperature",
