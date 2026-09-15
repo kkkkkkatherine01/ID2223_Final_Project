@@ -6,10 +6,7 @@ served through a Streamlit dashboard.
 
 ## Live dashboard
 
-- **Primary**: https://id2223finalproject-tdkxcqvvre8kraotgy3ffg.streamlit.app (Streamlit Community Cloud)
-- **Backup**: https://huggingface.co/spaces/kkkkkkatherine/se3-electricity-forecast
-  (Gradio, on Hugging Face Spaces - kept running as a fallback; see "Deploying
-  the dashboard" below for why it's not the primary)
+- https://id2223finalproject-tdkxcqvvre8kraotgy3ffg.streamlit.app (Streamlit Community Cloud)
 
 ## Architecture
 
@@ -68,12 +65,7 @@ file for the cron expression, and use "Run workflow" to trigger manually.
 
 ## Deploying the dashboard
 
-**Primary - Streamlit Community Cloud** (share.streamlit.io): sign in with
+**Streamlit Community Cloud**: sign in with
 GitHub, connect this repo, set the main file path to `app/app.py`, and add
 `HOPSWORKS_API_KEY` / `HOPSWORKS_PROJECT` under the app's Secrets (TOML
-format). Every push to `main` redeploys automatically. Uses
-`app/requirements.txt` (not the root one) - deliberately excludes
-`hopsworks[python]`'s `confluent-kafka` dependency, since Streamlit Cloud's
-Debian image ships a `librdkafka` too old to build it against; the
-dashboard only ever reads from the Feature Store, so plain `hopsworks` +
-an explicit `pyarrow` is enough.
+format). Every push to `main` redeploys automatically.
