@@ -1,6 +1,6 @@
 # SE3 Electricity Price Forecast
 
-ID2223 project (group_888): predicts next-24h hourly day-ahead electricity
+ID2223 project (group_888): predicts tomorrow's hourly day-ahead electricity
 prices for the Stockholm region (SE3) using weather + calendar features,
 served through a Streamlit dashboard.
 
@@ -23,10 +23,11 @@ Feature-Training-Inference pipeline on Hopsworks:
 - **Training pipeline** (`training_pipeline/`, weekly): reads the joined
   Feature View, trains an XGBoost regressor with a time-based
   train/test split, registers the model in the Hopsworks Model Registry.
-- **Inference pipeline** (`inference_pipeline/`, daily): builds feature
-  rows for the next 24 hours from the latest forecast weather + most recent
-  known price lags, predicts, writes to the `price_predictions` Feature
-  Group.
+- **Inference pipeline** (`inference_pipeline/`, daily, before Nord Pool's
+  day-ahead results publish): builds feature rows for tomorrow's full
+  Stockholm delivery day from forecast weather + known price lags,
+  recursively predicts (each hour's prediction feeds the next hour's
+  rolling features), writes to the `price_predictions` Feature Group.
 - **Dashboard** (`app/app.py`): Streamlit app, deployed on Streamlit
   Community Cloud, reads directly from the Feature Store.
 

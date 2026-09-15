@@ -16,7 +16,7 @@ FG_VERSION = 1
 PRICE_FG_NAME = "electricity_prices"
 WEATHER_FG_NAME = "weather"
 PREDICTIONS_FG_NAME = "price_predictions"
-PREDICTIONS_FG_VERSION = 2
+PREDICTIONS_FG_VERSION = 3
 
 FEATURE_VIEW_NAME = "electricity_price_fv"
 FEATURE_VIEW_VERSION = 2
@@ -26,7 +26,10 @@ MODEL_VERSION = None
 
 PRICE_LAG_HOURS = [24, 48, 168]
 ROLLING_WINDOWS_HOURS = [24, 168]
-FORECAST_HORIZON_HOURS = 24
+
+STOCKHOLM_TZ = "Europe/Stockholm"
+# backtest simulates daily_inference.py running at this UTC hour each day
+INFERENCE_RUN_HOUR_UTC = 8
 
 FEATURE_COLUMNS = [
     "temperature",

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import pandas as pd
 import xgboost as xgb
@@ -11,7 +11,7 @@ from common.hopsworks_utils import (
     get_or_create_price_fg,
     get_or_create_weather_fg,
 )
-from common.recursive_inference import predict_next_24h
+from common.recursive_inference import next_delivery_day_window, recursive_predict
 
 
 def load_latest_model(project):
@@ -28,10 +28,7 @@ def _assert_complete_hourly_coverage(df: pd.DataFrame, target_start: datetime, t
     expected = pd.date_range(target_start, target_end, freq="1h", tz="UTC")
     missing = expected.difference(pd.DatetimeIndex(df["datetime"]))
     if len(missing) > 0:
-        raise RuntimeError(
-            f"{label}: missing {len(missing)}/{len(expected)} required hours for the "
-            f"{config.FORECAST_HORIZON_HOURS}h forecast window: {list(missing)}"
-        )
+        raise RuntimeError(f"{label}: missing {len(missing)}/{len(expected)} required hours: {list(missing)}")
 
 
 def build_inference_inputs(fs, target_start: datetime, target_end: datetime):
@@ -56,13 +53,12 @@ def main():
     project, fs = get_feature_store()
 
     now = datetime.now(timezone.utc)
-    target_start = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
-    target_end = target_start + timedelta(hours=config.FORECAST_HORIZON_HOURS - 1)
+    target_start, target_end = next_delivery_day_window(now)
 
     weather_df, price_series, initial_buffer = build_inference_inputs(fs, target_start, target_end)
 
     model, model_version = load_latest_model(project)
-    result = predict_next_24h(model, weather_df, price_series, initial_buffer)
+    result = recursive_predict(model, weather_df, price_series, initial_buffer)
     _assert_complete_hourly_coverage(result, target_start, target_end, "predictions")
 
     result["model_version"] = model_version

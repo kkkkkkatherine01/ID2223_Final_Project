@@ -13,6 +13,7 @@ from common.hopsworks_utils import (  # noqa: E402
     get_or_create_predictions_fg,
     get_or_create_price_fg,
 )
+from common.recursive_inference import next_delivery_day_window  # noqa: E402
 
 st.set_page_config(page_title="SE3 Electricity Price Forecast", layout="wide")
 
@@ -38,11 +39,12 @@ st.title("Swedish Electricity Price Forecast (SE3 - Stockholm)")
 
 price_df, pred_df = load_data()
 now = pd.Timestamp.utcnow()
+tomorrow_start, tomorrow_end = next_delivery_day_window(now)
 
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.subheader("Price history (7d) & 24h forecast")
+    st.subheader("Price history (7d) & tomorrow's forecast")
     history_window = price_df[
         (price_df["datetime"] >= now - timedelta(days=7)) & (price_df["datetime"] <= now)
     ]
@@ -57,7 +59,7 @@ with col1:
         )
     )
     forecast_window = pred_df[
-        (pred_df["datetime"] >= now) & (pred_df["datetime"] < now + timedelta(hours=24))
+        (pred_df["datetime"] >= tomorrow_start) & (pred_df["datetime"] <= tomorrow_end)
     ]
     fig.add_trace(
         go.Scatter(
@@ -77,7 +79,7 @@ with col1:
 
 with col2:
     st.subheader("Best times to use electricity")
-    upcoming = pred_df[pred_df["datetime"] >= now].head(24)
+    upcoming = forecast_window
     if upcoming.empty:
         st.info("No forecast available yet - check back after the next inference run.")
     else:
