@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 from common import config
 from common.hopsworks_utils import get_feature_store, get_or_create_price_fg
@@ -11,8 +11,9 @@ FORWARD_DAYS = 1
 
 
 def main():
-    end = date.today() + timedelta(days=FORWARD_DAYS)
-    context_start = date.today() - timedelta(days=CONTEXT_DAYS)
+    today = datetime.now(timezone.utc).date()
+    end = today + timedelta(days=FORWARD_DAYS)
+    context_start = today - timedelta(days=CONTEXT_DAYS)
     print(f"Fetching prices for {config.NORDPOOL_AREA} from {context_start} to {end}...")
 
     prices = fetch_prices_range(context_start, end)
@@ -21,7 +22,7 @@ def main():
 
     prices = add_price_features(prices)
 
-    insert_cutoff = date.today() - timedelta(days=INSERT_DAYS)
+    insert_cutoff = today - timedelta(days=INSERT_DAYS)
     prices = prices[prices["datetime"].dt.date >= insert_cutoff]
 
     _, fs = get_feature_store()

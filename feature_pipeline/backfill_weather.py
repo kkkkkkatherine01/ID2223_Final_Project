@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 from common import config
 from common.calendar_features import add_calendar_features
@@ -9,7 +9,7 @@ BACKFILL_DAYS = 730
 
 
 def main():
-    end = date.today() - timedelta(days=1)
+    end = datetime.now(timezone.utc).date() - timedelta(days=1)
     start = end - timedelta(days=BACKFILL_DAYS)
     print(f"Backfilling weather from {start} to {end}...")
 

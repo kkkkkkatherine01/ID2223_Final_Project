@@ -16,6 +16,8 @@ from common.hopsworks_utils import (  # noqa: E402
 
 st.set_page_config(page_title="SE3 Electricity Price Forecast", layout="wide")
 
+STOCKHOLM_TZ = "Europe/Stockholm"
+
 
 @st.cache_resource(ttl=3600)
 def get_fs():
@@ -46,7 +48,7 @@ with col1:
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
-            x=history_window["datetime"],
+            x=history_window["datetime"].dt.tz_convert(STOCKHOLM_TZ),
             y=history_window["price_eur_mwh"],
             name="Actual price",
             line=dict(color="#1f77b4"),
@@ -57,14 +59,14 @@ with col1:
     ]
     fig.add_trace(
         go.Scatter(
-            x=forecast_window["datetime"],
+            x=forecast_window["datetime"].dt.tz_convert(STOCKHOLM_TZ),
             y=forecast_window["predicted_price_eur_mwh"],
             name="Forecast",
             line=dict(color="#ff7f0e", dash="dash"),
         )
     )
     fig.update_layout(
-        xaxis_title="Time (UTC)",
+        xaxis_title="Time (Stockholm)",
         yaxis_title="EUR / MWh",
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
         height=450,
@@ -79,7 +81,7 @@ with col2:
     else:
         cheapest = upcoming.nsmallest(3, "predicted_price_eur_mwh")
         for _, row in cheapest.iterrows():
-            local_time = row["datetime"].tz_convert("Europe/Stockholm")
+            local_time = row["datetime"].tz_convert(STOCKHOLM_TZ)
             st.metric(
                 label=f"{local_time.strftime('%a %H:%M')} (Stockholm)",
                 value=f"{row['predicted_price_eur_mwh']:.1f} EUR/MWh",
@@ -100,12 +102,13 @@ else:
     mae = (merged["predicted_price_eur_mwh"] - merged["price_eur_mwh"]).abs().mean()
     st.caption(f"MAE over shown window: {mae:.2f} EUR/MWh")
 
+    merged_local = merged["datetime"].dt.tz_convert(STOCKHOLM_TZ)
     fig2 = go.Figure()
     fig2.add_trace(
-        go.Scatter(x=merged["datetime"], y=merged["price_eur_mwh"], name="Actual")
+        go.Scatter(x=merged_local, y=merged["price_eur_mwh"], name="Actual")
     )
     fig2.add_trace(
-        go.Scatter(x=merged["datetime"], y=merged["predicted_price_eur_mwh"], name="Predicted")
+        go.Scatter(x=merged_local, y=merged["predicted_price_eur_mwh"], name="Predicted")
     )
-    fig2.update_layout(xaxis_title="Time (UTC)", yaxis_title="EUR / MWh", height=350)
+    fig2.update_layout(xaxis_title="Time (Stockholm)", yaxis_title="EUR / MWh", height=350)
     st.plotly_chart(fig2, use_container_width=True)

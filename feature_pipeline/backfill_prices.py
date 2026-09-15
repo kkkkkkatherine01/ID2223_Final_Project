@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 from common import config
 from common.hopsworks_utils import get_feature_store, get_or_create_price_fg
@@ -9,7 +9,7 @@ BACKFILL_DAYS = 730
 
 
 def main():
-    end = date.today() - timedelta(days=1)
+    end = datetime.now(timezone.utc).date() - timedelta(days=1)
     start = end - timedelta(days=BACKFILL_DAYS)
     print(f"Backfilling prices for {config.NORDPOOL_AREA} from {start} to {end}...")
 

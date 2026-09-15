@@ -8,13 +8,19 @@ HORIZON = config.FORECAST_HORIZON_HOURS
 _WEATHER_CALENDAR_COLS = [c for c in config.FEATURE_COLUMNS if not c.startswith("price_")]
 
 
-def recursive_backtest_mae(model: xgb.XGBRegressor, df: pd.DataFrame, test_days: int, step_hours: int = 24) -> dict:
+def recursive_backtest_mae(
+    model: xgb.XGBRegressor,
+    df: pd.DataFrame,
+    price_series_raw: pd.Series,
+    test_days: int,
+    step_hours: int = 24,
+) -> dict:
     d = df.set_index("datetime").sort_index()
     full_index = pd.date_range(d.index.min(), d.index.max(), freq="1h", tz=d.index.tz)
     d = d.reindex(full_index)
     d.index.name = "datetime"
 
-    price_series_full = d[config.TARGET_COLUMN]
+    price_series_full = price_series_raw.sort_index()
     max_window = max(config.ROLLING_WINDOWS_HOURS)
 
     cutoff = d.index.max() - pd.Timedelta(days=test_days)

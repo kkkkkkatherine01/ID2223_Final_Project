@@ -8,7 +8,12 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from common import config
 from common.config import FEATURE_COLUMNS, TARGET_COLUMN
-from common.hopsworks_utils import get_champion_model, get_feature_store, get_or_create_feature_view
+from common.hopsworks_utils import (
+    get_champion_model,
+    get_feature_store,
+    get_or_create_feature_view,
+    get_or_create_price_fg,
+)
 from training_pipeline.backtest import recursive_backtest_mae
 
 TEST_DAYS = 30
@@ -67,12 +72,14 @@ def main():
     if len(df) < 24 * 60:
         raise RuntimeError(f"Only {len(df)} usable rows - backfill more history before training")
 
+    price_series_raw = get_or_create_price_fg(fs).read().set_index("datetime")["price_eur_mwh"].sort_index()
+
     train_df, test_df = time_split(df)
     model = train(train_df)
 
     oracle_metrics = evaluate(model, test_df)
 
-    candidate_backtest = recursive_backtest_mae(model, df, test_days=TEST_DAYS)
+    candidate_backtest = recursive_backtest_mae(model, df, price_series_raw, test_days=TEST_DAYS)
     metrics = {
         "mae": candidate_backtest["mae"],
         "oracle_mae": oracle_metrics["mae"],
@@ -92,7 +99,7 @@ def main():
         champion_dir = champion.download()
         champion_model = xgb.XGBRegressor()
         champion_model.load_model(f"{champion_dir}/model.json")
-        champion_backtest = recursive_backtest_mae(champion_model, df, test_days=TEST_DAYS)
+        champion_backtest = recursive_backtest_mae(champion_model, df, price_series_raw, test_days=TEST_DAYS)
         champion_mae = champion_backtest["mae"]
         print(f"Current champion (v{champion.version}) re-evaluated on this window: mae={champion_mae:.3f}")
 
