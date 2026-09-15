@@ -13,7 +13,7 @@ from common.hopsworks_utils import (  # noqa: E402
     get_or_create_predictions_fg,
     get_or_create_price_fg,
 )
-from common.recursive_inference import next_delivery_day_window  # noqa: E402
+from common.delivery_day import next_delivery_day_window  # noqa: E402
 
 st.set_page_config(page_title="SE3 Electricity Price Forecast", layout="wide")
 

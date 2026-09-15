@@ -11,7 +11,8 @@ from common.hopsworks_utils import (
     get_or_create_price_fg,
     get_or_create_weather_fg,
 )
-from common.recursive_inference import next_delivery_day_window, recursive_predict
+from common.delivery_day import next_delivery_day_window
+from common.recursive_inference import recursive_predict
 
 
 def load_latest_model(project):

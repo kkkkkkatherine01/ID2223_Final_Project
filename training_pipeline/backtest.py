@@ -2,7 +2,8 @@ import pandas as pd
 import xgboost as xgb
 
 from common import config
-from common.recursive_inference import next_delivery_day_window, recursive_predict
+from common.delivery_day import next_delivery_day_window
+from common.recursive_inference import recursive_predict
 
 _WEATHER_CALENDAR_COLS = [c for c in config.FEATURE_COLUMNS if not c.startswith("price_")]
 
