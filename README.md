@@ -17,7 +17,7 @@ Feature-Training-Inference pipeline on Hopsworks:
 
 - **Feature pipeline** (`feature_pipeline/`, daily via GitHub Actions):
   pulls SE3 day-ahead prices (ENTSO-E Transparency Platform) and
-  OpenWeatherMap forecasts, engineers lag/rolling price features and
+  Open-Meteo forecasts, engineers lag/rolling price features and
   calendar features, upserts into two Hopsworks Feature Groups
   (`electricity_prices`, `weather`).
 - **Training pipeline** (`training_pipeline/`, weekly): reads the joined
@@ -39,8 +39,6 @@ Feature-Training-Inference pipeline on Hopsworks:
 2. Copy `.env.example` to `.env` and fill in:
    - `HOPSWORKS_API_KEY`, `HOPSWORKS_PROJECT` (create a project at
      app.hopsworks.ai first)
-   - `OPENWEATHER_API_KEY` (free tier at openweathermap.org; new keys take
-     up to ~2h to activate)
    - `ENTSOE_API_KEY` (register at transparency.entsoe.eu, then generate a
      "Web Api Security Token" from account settings, or email
      transparency@entsoe.eu with subject "Restful API access" if that
@@ -62,7 +60,7 @@ Feature-Training-Inference pipeline on Hopsworks:
 ## Automation (GitHub Actions)
 
 Add these repo secrets: `HOPSWORKS_API_KEY`, `HOPSWORKS_PROJECT`,
-`OPENWEATHER_API_KEY`, `ENTSOE_API_KEY`. The three workflows in
+`ENTSOE_API_KEY`. The three workflows in
 `.github/workflows/` then run
 on their own schedule (daily feature+inference, weekly training) - see each
 file for the cron expression, and use "Run workflow" to trigger manually.

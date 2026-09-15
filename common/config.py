@@ -6,7 +6,6 @@ load_dotenv()
 NORDPOOL_AREA = os.getenv("NORDPOOL_AREA", "SE3")
 ENTSOE_API_KEY = os.getenv("ENTSOE_API_KEY")
 
-OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 WEATHER_LAT = float(os.getenv("WEATHER_LAT", "59.3293"))
 WEATHER_LON = float(os.getenv("WEATHER_LON", "18.0686"))
 

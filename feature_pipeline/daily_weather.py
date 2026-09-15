@@ -7,7 +7,7 @@ from feature_pipeline.weather_client import fetch_forecast
 def main():
     weather = fetch_forecast()
     if weather.empty:
-        raise RuntimeError("No weather data fetched - check OpenWeatherMap API key/connectivity")
+        raise RuntimeError("No weather data fetched - check Open-Meteo connectivity")
     weather = add_calendar_features(weather)
 
     _, fs = get_feature_store()

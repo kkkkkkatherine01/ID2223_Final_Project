@@ -5,32 +5,30 @@ import requests
 
 from common import config
 
-OWM_FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
+OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 
 
 def fetch_forecast() -> pd.DataFrame:
     params = {
-        "lat": config.WEATHER_LAT,
-        "lon": config.WEATHER_LON,
-        "appid": config.OPENWEATHER_API_KEY,
-        "units": "metric",
+        "latitude": config.WEATHER_LAT,
+        "longitude": config.WEATHER_LON,
+        "hourly": "temperature_2m,wind_speed_10m,cloud_cover",
+        "timezone": "UTC",
+        "wind_speed_unit": "ms",
     }
-    resp = requests.get(OWM_FORECAST_URL, params=params, timeout=30)
+    resp = requests.get(OPEN_METEO_FORECAST_URL, params=params, timeout=30)
     resp.raise_for_status()
-    payload = resp.json()
+    hourly = resp.json()["hourly"]
 
-    rows = [
+    df = pd.DataFrame(
         {
-            "datetime": pd.to_datetime(item["dt"], unit="s", utc=True),
-            "temperature": item["main"]["temp"],
-            "wind_speed": item["wind"]["speed"],
-            "cloud_coverage": item["clouds"]["all"],
+            "datetime": pd.to_datetime(hourly["time"], utc=True),
+            "temperature": hourly["temperature_2m"],
+            "wind_speed": hourly["wind_speed_10m"],
+            "cloud_coverage": hourly["cloud_cover"],
         }
-        for item in payload["list"]
-    ]
-    df = pd.DataFrame(rows).sort_values("datetime").set_index("datetime")
-    df = df.resample("1h").interpolate(method="linear").reset_index()
+    )
     df["cloud_coverage"] = df["cloud_coverage"].round().astype("int64")  # matches bigint FG schema
     df["source"] = "forecast"
     df["forecast_made_at"] = pd.Timestamp.now(tz="UTC")
@@ -45,7 +43,7 @@ def fetch_historical(start: date, end: date) -> pd.DataFrame:
         "end_date": end.isoformat(),
         "hourly": "temperature_2m,wind_speed_10m,cloud_cover",
         "timezone": "UTC",
-        "wind_speed_unit": "ms",  # Open-Meteo defaults to km/h; forecast (OWM, units=metric) is m/s
+        "wind_speed_unit": "ms",  # Open-Meteo defaults to km/h - pin explicitly, don't rely on it
     }
     resp = requests.get(OPEN_METEO_ARCHIVE_URL, params=params, timeout=60)
     resp.raise_for_status()
