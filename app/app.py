@@ -62,6 +62,7 @@ with col1:
         fig.update_layout(
             xaxis_title="Time (Stockholm)",
             yaxis_title="EUR / MWh",
+            yaxis=dict(rangemode="tozero"),
             height=450,
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -107,5 +108,10 @@ else:
     fig2.add_trace(
         go.Scatter(x=merged_local, y=merged["predicted_price_eur_mwh"], name="Predicted")
     )
-    fig2.update_layout(xaxis_title="Time (Stockholm)", yaxis_title="EUR / MWh", height=350)
+    fig2.update_layout(
+        xaxis_title="Time (Stockholm)",
+        yaxis_title="EUR / MWh",
+        yaxis=dict(rangemode="tozero"),
+        height=350,
+    )
     st.plotly_chart(fig2, use_container_width=True)
