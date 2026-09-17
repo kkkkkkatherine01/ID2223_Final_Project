@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 pip install "hopsworks[python]==5.0.6" --no-deps
 pip install pyhumps==1.6.1 requests furl boto3 "pandas[mysql]<2.4.0" `
-    "numpy<2.5.0,>=1.26.3" mock "avro==1.12.0" "PyMySQL[rsa]" tzlocal `
+    "numpy<2.5.0,>=1.26.3" mock "avro==1.12.0" "PyMySQL[rsa]==1.2.0" tzlocal `
     "fsspec<2025.12.0" retrying "hopsworks_aiomysql[sa]==0.2.2" `
     "opensearch-py<=2.4.2,>=1.1.0" tqdm "grpcio<2.0.0,>=1.49.1" `
     "protobuf<5.0.0,>=4.25.4" packaging "hopsworks-apigen<2.0.0,>=1.0.4" `
